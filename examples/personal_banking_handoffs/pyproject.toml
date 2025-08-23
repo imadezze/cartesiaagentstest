@@ -1,0 +1,35 @@
+[project]
+name = "wells-fargo-handoffs"
+version = "0.1.0"
+description = "Personal banking agent, combining bank teller and customer service agent with multi-agent handoffs"
+dependencies = [
+    "cartesia-line",
+    "google-genai; python_version>='3.9'",
+    "loguru",
+    "fastapi",
+    "uvicorn",
+]
+
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore::DeprecationWarning:pydantic.*",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "pytest-asyncio",
+]
