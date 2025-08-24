@@ -40,14 +40,34 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
         return { baseWidth: 1200, baseHeight: 800 };
       case 'auto':
       default:
-        // Dynamic sizing based on content
-        const minWidth = 900;
-        const maxWidth = 1400;
-        const baseWidth = Math.min(maxWidth, Math.max(minWidth, nodeCount * 80 + 300));
-        const minHeight = 500;
-        const baseHeight = Math.max(minHeight, nodeCount * 60 + 200);
-        const complexityFactor = Math.min(2.5, 1 + (edgeCount / Math.max(nodeCount, 1)) * 0.3);
-        return { baseWidth, baseHeight: Math.ceil(baseHeight * complexityFactor) };
+        // Dynamic sizing based on content - calculate width based on actual layers
+        // First do a quick topological analysis to estimate layers
+        const inDegreeTemp: { [key: string]: number } = {};
+        const adjacencyListTemp: { [key: string]: string[] } = {};
+        
+        data.nodes.forEach(node => {
+          inDegreeTemp[node.id] = 0;
+          adjacencyListTemp[node.id] = [];
+        });
+        
+        data.edges.forEach(edge => {
+          adjacencyListTemp[edge.source].push(edge.target);
+          inDegreeTemp[edge.target]++;
+        });
+        
+        // Quick layer estimation
+        const startNodes = data.nodes.filter(n => n.type === 'start' || inDegreeTemp[n.id] === 0);
+        let estimatedLayers = Math.max(1, Math.ceil(nodeCount / 3)); // Simple estimation
+        
+        const minWidth = 600;
+        const layerWidth = 200; // Base width per layer
+        const baseWidth = Math.max(minWidth, estimatedLayers * layerWidth + 200);
+        
+        // Calculate height based on maximum nodes that might stack vertically
+        const maxNodesInLayer = Math.min(Math.ceil(nodeCount / Math.max(estimatedLayers, 1)), 6);
+        const minHeight = 400;
+        const baseHeight = Math.max(minHeight, maxNodesInLayer * 120 + 200);
+        return { baseWidth, baseHeight };
     }
   };
 
@@ -59,7 +79,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
     const { baseWidth, baseHeight } = getCanvasDimensions();
     const width = baseWidth;
     const height = baseHeight;
-    const centerX = width / 2;
+    const centerY = height / 2;
     const margin = 60;
     const positions: { [key: string]: { x: number; y: number } } = {};
 
@@ -119,96 +139,104 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
       layers.push(unvisited.map(n => n.id));
     }
 
-    // Adaptive spacing calculation based on graph complexity
-    const availableHeight = height - 2 * margin;
+    // Adaptive spacing calculation based on graph complexity - horizontal layout
     const availableWidth = width - 2 * margin;
+    const availableHeight = height - 2 * margin;
     
     // Calculate optimal layout parameters based on canvas size
     const maxLayerSize = Math.max(...layers.map(layer => layer.length));
     const layerCount = layers.length;
     
-    // Adaptive max nodes per row based on canvas size and graph complexity
-    let maxNodesPerRow: number;
+    // Adaptive max nodes per column based on canvas size and graph complexity
+    let maxNodesPerCol: number;
     
-    // Adjust node density based on canvas size
-    const sizeMultiplier = canvasSize === 'small' ? 0.7 : canvasSize === 'large' ? 1.3 : 1.0;
+    // Calculate how many nodes can fit vertically based on available height
+    const nodeSize = 40; // Approximate node diameter
+    const minVerticalSpacing = 20;
+    const maxVerticalNodes = Math.floor(availableHeight / (nodeSize + minVerticalSpacing));
+    
+    // Adjust node density based on canvas size - for vertical stacking in horizontal layout
+    const sizeMultiplier = canvasSize === 'small' ? 0.8 : canvasSize === 'large' ? 1.2 : 1.0;
     
     if (canvasSize === 'small') {
-      // Smaller canvas: pack nodes more tightly
-      maxNodesPerRow = nodeCount <= 6 ? Math.min(2, Math.max(1, Math.ceil(nodeCount / Math.max(layers.length, 2)))) :
-                      nodeCount <= 10 ? (edgeDensity > 0.3 ? 2 : 3) :
-                      (edgeDensity > 0.5 ? 1 : 2);
-    } else if (nodeCount <= 6) {
-      maxNodesPerRow = Math.min(Math.ceil(3 * sizeMultiplier), Math.max(2, Math.ceil(nodeCount / Math.max(layers.length, 2))));
-    } else if (nodeCount <= 10) {
-      maxNodesPerRow = Math.ceil((edgeDensity > 0.3 ? 3 : 4) * sizeMultiplier);
+      maxNodesPerCol = Math.min(maxVerticalNodes, Math.max(2, Math.ceil(3 * sizeMultiplier)));
+    } else if (canvasSize === 'large') {
+      maxNodesPerCol = Math.min(maxVerticalNodes, Math.max(3, Math.ceil(5 * sizeMultiplier)));
     } else {
-      maxNodesPerRow = Math.ceil((edgeDensity > 0.5 ? 2 : 3) * sizeMultiplier);
+      maxNodesPerCol = Math.min(maxVerticalNodes, Math.max(2, Math.ceil(4 * sizeMultiplier)));
     }
     
     // Calculate optimal spacing based on available space, node count, and canvas size
-    const estimatedTotalRows = layers.reduce((total, layer) => 
-      total + Math.ceil(layer.length / maxNodesPerRow), 0);
+    const estimatedTotalCols = layers.reduce((total, layer) => 
+      total + Math.ceil(layer.length / maxNodesPerCol), 0);
     
-    // Adjust spacing based on canvas size
-    const minLayerHeight = canvasSize === 'small' ? 60 : 80;
-    const maxLayerHeight = canvasSize === 'small' ? 120 : canvasSize === 'large' ? 180 : 150;
-    const minNodeSpacing = canvasSize === 'small' ? 100 : 120;
-    const maxNodeSpacing = canvasSize === 'small' ? 200 : canvasSize === 'large' ? 320 : 280;
+    // Adjust spacing based on canvas size - horizontal layout
+    const minLayerWidth = canvasSize === 'small' ? 120 : 150; // Width between layers (columns)
+    const maxLayerWidth = canvasSize === 'small' ? 200 : canvasSize === 'large' ? 250 : 220;
+    const minNodeSpacing = canvasSize === 'small' ? 80 : 100; // Vertical spacing between nodes
+    const maxNodeSpacing = canvasSize === 'small' ? 150 : canvasSize === 'large' ? 200 : 180;
     
-    const optimalLayerHeight = Math.max(minLayerHeight, 
-      Math.min(maxLayerHeight, availableHeight / Math.max(estimatedTotalRows, 2)));
+    const optimalLayerWidth = Math.max(minLayerWidth, 
+      Math.min(maxLayerWidth, availableWidth / Math.max(layers.length, 1)));
     
     const optimalNodeSpacing = Math.max(minNodeSpacing, 
-      Math.min(maxNodeSpacing, availableWidth / Math.max(maxNodesPerRow - 1, 1)));
+      Math.min(maxNodeSpacing, availableHeight / Math.max(maxNodesPerCol, 2)));
     
-    // Position nodes with adaptive spacing
-    let currentY = margin;
+    // Position nodes with adaptive spacing - horizontal layout
+    let currentX = margin;
     
     layers.forEach((layer, layerIndex) => {
       if (layer.length === 0) return;
       
-      const rowsNeeded = Math.ceil(layer.length / maxNodesPerRow);
+      const colsNeeded = Math.ceil(layer.length / maxNodesPerCol);
       
       // Sort nodes within layer to minimize crossings
       if (layerIndex > 0) {
         layer.sort((a, b) => {
-          const getAvgPredecessorX = (nodeId: string) => {
+          const getAvgPredecessorY = (nodeId: string) => {
             const predecessors = data.edges
               .filter(edge => edge.target === nodeId)
               .map(edge => positions[edge.source])
               .filter(Boolean);
             
-            if (predecessors.length === 0) return centerX;
-            return predecessors.reduce((sum, pos) => sum + pos.x, 0) / predecessors.length;
+            if (predecessors.length === 0) return centerY;
+            return predecessors.reduce((sum, pos) => sum + pos.y, 0) / predecessors.length;
           };
           
-          return getAvgPredecessorX(a) - getAvgPredecessorX(b);
+          return getAvgPredecessorY(a) - getAvgPredecessorY(b);
         });
       }
       
-      // Position nodes in adaptive rows
-      for (let row = 0; row < rowsNeeded; row++) {
-        const startIdx = row * maxNodesPerRow;
-        const endIdx = Math.min(startIdx + maxNodesPerRow, layer.length);
-        const rowNodes = layer.slice(startIdx, endIdx);
+      // Position nodes in adaptive columns
+      for (let col = 0; col < colsNeeded; col++) {
+        const startIdx = col * maxNodesPerCol;
+        const endIdx = Math.min(startIdx + maxNodesPerCol, layer.length);
+        const colNodes = layer.slice(startIdx, endIdx);
         
-        const rowSpacingMultiplier = rowsNeeded > 1 ? 0.8 : 1.0; // Tighter spacing for multi-row layers
-        const y = currentY + (row * optimalLayerHeight * rowSpacingMultiplier);
+        const colSpacingMultiplier = colsNeeded > 1 ? 0.8 : 1.0;
+        const x = currentX + (col * optimalLayerWidth * colSpacingMultiplier);
         
-        if (rowNodes.length === 1) {
-          positions[rowNodes[0]] = { x: centerX, y };
+        if (colNodes.length === 1) {
+          // For single node, use better vertical distribution
+          const layerVerticalPosition = layerIndex === 0 ? centerY : // First layer at center
+            layerIndex < layers.length / 2 ? centerY - (layers.length * 30) + (layerIndex * 60) : // Upper half
+            centerY + ((layerIndex - layers.length / 2) * 60); // Lower half
+          positions[colNodes[0]] = { x, y: layerVerticalPosition };
         } else {
-          // Adaptive horizontal spacing based on row size
-          const actualNodeSpacing = Math.min(optimalNodeSpacing, 
-            availableWidth / Math.max(rowNodes.length - 1, 1));
-          const totalWidth = (rowNodes.length - 1) * actualNodeSpacing;
-          const startX = centerX - totalWidth / 2;
+          // Adaptive vertical spacing based on column size - use more vertical space
+          const actualNodeSpacing = Math.max(optimalNodeSpacing * 0.8, 
+            Math.min(optimalNodeSpacing * 1.5, availableHeight / Math.max(colNodes.length + 1, 3)));
+          const totalHeight = (colNodes.length - 1) * actualNodeSpacing;
           
-          rowNodes.forEach((nodeId, idx) => {
+          // Spread nodes across more vertical space instead of centering tightly
+          const verticalRange = availableHeight * 0.7; // Use 70% of available height
+          const effectiveSpacing = Math.min(actualNodeSpacing, verticalRange / Math.max(colNodes.length - 1, 1));
+          const startY = margin + (availableHeight - (colNodes.length - 1) * effectiveSpacing) / 2;
+          
+          colNodes.forEach((nodeId, idx) => {
             positions[nodeId] = {
-              x: startX + idx * actualNodeSpacing,
-              y
+              x,
+              y: startY + idx * effectiveSpacing
             };
           });
         }
@@ -219,7 +247,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
         layer.includes(edge.source) || layer.includes(edge.target)).length;
       const spacingMultiplier = Math.max(0.9, Math.min(1.3, 1 + (layerEdgeCount / edgeCount) * 0.5));
       
-      currentY += optimalLayerHeight * Math.max(rowsNeeded * spacingMultiplier, 1);
+      currentX += optimalLayerWidth * Math.max(colsNeeded * spacingMultiplier, 1);
     });
 
     return { positions, width, height };
