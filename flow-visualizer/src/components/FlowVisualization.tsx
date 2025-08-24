@@ -217,10 +217,33 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
         const x = currentX + (col * optimalLayerWidth * colSpacingMultiplier);
         
         if (colNodes.length === 1) {
-          // For single node, use better vertical distribution
-          const layerVerticalPosition = layerIndex === 0 ? centerY : // First layer at center
-            layerIndex < layers.length / 2 ? centerY - (layers.length * 30) + (layerIndex * 60) : // Upper half
-            centerY + ((layerIndex - layers.length / 2) * 60); // Lower half
+          // For single node, distribute to better fill vertical space
+          let layerVerticalPosition;
+          
+          if (layerIndex === 0) {
+            // First layer stays at center
+            layerVerticalPosition = centerY;
+          } else {
+            // Distribute other single nodes across the full vertical space
+            const usableHeight = availableHeight * 0.9;
+            
+            if (layers.length <= 2) {
+              layerVerticalPosition = centerY;
+            } else {
+              // Spread nodes evenly across vertical zones
+              const zoneHeight = usableHeight / Math.max(layers.length - 1, 1);
+              const startY = margin + (availableHeight - usableHeight) / 2;
+              layerVerticalPosition = startY + (layerIndex - 1) * zoneHeight;
+              
+              // Add slight variation for more natural positioning
+              const variation = Math.sin(layerIndex * 0.7) * 40;
+              layerVerticalPosition += variation;
+            }
+            
+            // Keep within bounds
+            layerVerticalPosition = Math.max(margin + 40, Math.min(height - margin - 40, layerVerticalPosition));
+          }
+          
           positions[colNodes[0]] = { x, y: layerVerticalPosition };
         } else {
           // Adaptive vertical spacing based on column size - use more vertical space
