@@ -65,15 +65,23 @@ class CallValidationNode(ReasoningNode):
         """
         Check if user has explicitly indicated they want to end the conversation.
         
-        This looks for common phrases that indicate user wants to wrap up.
+        This looks for common phrases that indicate user wants to wrap up,
+        including repeated "no" responses to wrap-up questions.
         """
-        # Get recent user messages
-        recent_messages = []
+        # Get recent user messages and agent messages
+        recent_user_messages = []
+        recent_agent_messages = []
+        
         for event in reversed(context.events):
-            if hasattr(event, 'content') and event.__class__.__name__ == 'UserTranscriptionReceived':
-                recent_messages.append(event.content.lower())
-                if len(recent_messages) >= 3:  # Check last 3 user messages
-                    break
+            if hasattr(event, 'content'):
+                if event.__class__.__name__ == 'UserTranscriptionReceived':
+                    recent_user_messages.append(event.content.lower())
+                elif event.__class__.__name__ == 'AgentResponse':
+                    recent_agent_messages.append(event.content.lower())
+                    
+            # Check last 6 exchanges
+            if len(recent_user_messages) >= 3 and len(recent_agent_messages) >= 3:
+                break
         
         # Common phrases that indicate user wants to end
         end_indicators = [
@@ -83,15 +91,51 @@ class CallValidationNode(ReasoningNode):
             "no more questions", "that covers it", "i think we're done"
         ]
         
-        for message in recent_messages:
+        # Check for explicit end indicators
+        for message in recent_user_messages:
             for indicator in end_indicators:
                 if indicator in message:
                     return True
         
+        # Check for "no" response to wrap-up questions
+        if len(recent_user_messages) >= 1:
+            # Check if user said "no" to wrap-up questions
+            latest_msg = recent_user_messages[0].strip()
+            
+            # If user said "no" and we've been asking wrap-up questions
+            if latest_msg == "no":
+                wrap_up_indicators = [
+                    "anything else", "wrap up", "help clarify", "before we", 
+                    "more questions", "that covers", "is there anything"
+                ]
+                
+                # Check if the most recent agent message contains wrap-up language
+                if recent_agent_messages and len(recent_agent_messages) > 0:
+                    latest_agent_msg = recent_agent_messages[0]
+                    for indicator in wrap_up_indicators:
+                        if indicator in latest_agent_msg:
+                            return True
+        
         return False
     
-    def _generate_validation_message(self, missing_fields: list[str], user_wants_to_end: bool) -> str:
+    def _check_user_asking_question(self, context: ConversationContext) -> bool:
+        """Check if user just asked a question that needs to be answered."""
+        # Get the most recent user message
+        for event in reversed(context.events):
+            if hasattr(event, 'content') and event.__class__.__name__ == 'UserTranscriptionReceived':
+                recent_message = event.content.lower()
+                
+                # Check for question indicators
+                question_indicators = ['how', 'what', 'why', 'when', 'where', 'can you', 'could you', 'is it possible', '?']
+                return any(indicator in recent_message for indicator in question_indicators)
+        
+        return False
+    
+    def _generate_validation_message(self, missing_fields: list[str], user_wants_to_end: bool, context: ConversationContext) -> str:
         """Generate appropriate validation message based on what's missing."""
+        
+        # Check if user just asked a question
+        user_asking_question = self._check_user_asking_question(context)
         
         if missing_fields and not user_wants_to_end:
             field_names = []
@@ -127,9 +171,18 @@ class CallValidationNode(ReasoningNode):
                 return f"I understand you need to go. Could I quickly get {' and '.join(field_names)} for follow-up?"
         
         elif not user_wants_to_end and not missing_fields:
-            return "Is there anything else I can help clarify about Cartesia's voice agents before we wrap up?"
+            if user_asking_question:
+                # User asked a specific question - don't generate a generic response
+                # The chat_node's question detection should handle the actual answer
+                return ""
+            else:
+                return "Is there anything else I can help clarify about Cartesia's voice agents before we wrap up?"
         
-        # All conditions met
+        elif user_wants_to_end and not missing_fields:
+            # User wants to end and we have all info - provide closure
+            return "Perfect! I'll make sure that information gets to you. Thank you for your time today, and I remain available if you need anything else."
+        
+        # All conditions met for end call
         return ""
     
     async def process_context(self, context: ConversationContext) -> AsyncGenerator[CallValidationResult, None]:
@@ -152,13 +205,36 @@ class CallValidationNode(ReasoningNode):
         # Check if user wants to end conversation
         user_wants_to_end = self._check_user_intent_to_end(context)
         
-        # Determine if call can end
-        can_end_call = contact_valid and user_wants_to_end
-        
-        # Generate appropriate message
-        validation_message = ""
-        if not can_end_call:
-            validation_message = self._generate_validation_message(missing_fields, user_wants_to_end)
+        # Special handling for when user wants to end with complete info
+        if user_wants_to_end and contact_valid:
+            # Check if we already provided a closure message recently
+            recent_agent_responses = []
+            for event in reversed(context.events[-5:]):  # Check last 5 events
+                if hasattr(event, 'content') and event.__class__.__name__ == 'AgentResponse':
+                    recent_agent_responses.append(event.content.lower())
+                    if len(recent_agent_responses) >= 2:
+                        break
+            
+            # If we already said goodbye/closure, allow end call
+            closure_indicators = ["thank you for your time", "i remain available", "i'll make sure"]
+            already_provided_closure = any(
+                any(indicator in response for indicator in closure_indicators)
+                for response in recent_agent_responses
+            )
+            
+            if already_provided_closure:
+                can_end_call = True
+                validation_message = ""
+            else:
+                # Provide closure message first
+                can_end_call = False
+                validation_message = self._generate_validation_message(missing_fields, user_wants_to_end, context)
+        else:
+            # Normal validation logic
+            can_end_call = contact_valid and user_wants_to_end
+            validation_message = ""
+            if not can_end_call:
+                validation_message = self._generate_validation_message(missing_fields, user_wants_to_end, context)
         
         logger.info(f"🔍 Validation result: can_end={can_end_call}, missing={missing_fields}, user_wants_end={user_wants_to_end}")
         
