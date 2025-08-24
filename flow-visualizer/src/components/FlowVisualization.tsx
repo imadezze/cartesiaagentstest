@@ -563,8 +563,14 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
           {data.edges.map((edge, edgeIndex) => {
             const isHighlighted = selectedNode && 
               (edge.source === selectedNode || edge.target === selectedNode);
-            const isHovered = hoveredEdge === edge.id;
-            const isClicked = clickedEdge === edge.id;
+            
+            // Check if this edge or its bidirectional counterpart is hovered/clicked
+            const bidirectionalEdges = data.edges.filter(e => 
+              (e.source === edge.source && e.target === edge.target) ||
+              (e.source === edge.target && e.target === edge.source)
+            );
+            const isHovered = bidirectionalEdges.some(e => hoveredEdge === e.id);
+            const isClicked = bidirectionalEdges.some(e => clickedEdge === e.id);
             
             return (
               <g key={edge.id}>
