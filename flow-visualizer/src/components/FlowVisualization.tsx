@@ -445,30 +445,30 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
     <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-lg">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-          <div className="flex gap-3">
+          <div className="flex gap-2 md:gap-3 flex-wrap">
             <button
               onClick={() => setShowFullLabels(!showFullLabels)}
-              className="px-4 py-2 text-sm font-medium bg-white border-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-lg shadow-sm transition-colors"
+              className="px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium bg-white border-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-lg shadow-sm transition-colors"
             >
               {showFullLabels ? 'Short Labels' : 'Full Labels'}
             </button>
             <button
               onClick={() => setShowEdgeLabels(!showEdgeLabels)}
-              className="px-4 py-2 text-sm font-medium bg-white border-2 border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 rounded-lg shadow-sm transition-colors"
+              className="px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium bg-white border-2 border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 rounded-lg shadow-sm transition-colors"
             >
               {showEdgeLabels ? 'Hide Edge Text' : 'Show Edge Text'}
             </button>
             <select
               value={canvasSize}
               onChange={(e) => setCanvasSize(e.target.value as 'small' | 'medium' | 'large' | 'auto')}
-              className="px-4 py-2 text-sm font-medium bg-white border-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-400 rounded-lg shadow-sm transition-colors"
+              className="px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium bg-white border-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-400 rounded-lg shadow-sm transition-colors min-w-0 w-auto"
             >
               <option value="auto">Auto Size</option>
-              <option value="small">Small (600x400)</option>
-              <option value="medium">Medium (900x600)</option>
-              <option value="large">Large (1400x900)</option>
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
             </select>
           </div>
         </div>
