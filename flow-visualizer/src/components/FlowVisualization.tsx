@@ -25,8 +25,14 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
   const [clickedEdge, setClickedEdge] = useState<string | null>(null);
   const [clickedLegendItem, setClickedLegendItem] = useState<string | null>(null);
   const [showFullLabels, setShowFullLabels] = useState(false);
-  const [showEdgeLabels, setShowEdgeLabels] = useState(true);
+  const [showEdgeLabels, setShowEdgeLabels] = useState(false);
   const [canvasSize, setCanvasSize] = useState<'small' | 'medium' | 'large' | 'auto'>('auto');
+  const [isClient, setIsClient] = useState(false);
+
+  // Handle hydration
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Legend descriptions
   const legendDescriptions = {
@@ -248,9 +254,11 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
               const startY = margin + (availableHeight - usableHeight) / 2;
               layerVerticalPosition = startY + (layerIndex - 1) * zoneHeight;
               
-              // Add slight variation for more natural positioning
-              const variation = Math.sin(layerIndex * 0.7) * 40;
-              layerVerticalPosition += variation;
+              // Add slight variation for more natural positioning (only on client)
+              if (isClient) {
+                const variation = Math.sin(layerIndex * 0.7) * 40;
+                layerVerticalPosition += variation;
+              }
             }
             
             // Keep within bounds
@@ -506,6 +514,21 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
                 strokeWidth="0.5"
               />
             </marker>
+            <marker
+              id="arrowhead-clicked"
+              markerWidth="9"
+              markerHeight="6"
+              refX="8"
+              refY="3"
+              orient="auto"
+            >
+              <polygon
+                points="0 0, 9 3, 0 6"
+                fill="#DC2626"
+                stroke="#B91C1C"
+                strokeWidth="0.5"
+              />
+            </marker>
             <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
               <feMorphology operator="dilate" radius="2"/>
               <feColorMatrix values="0 0 0 0 0.3 0 0 0 0 0.6 0 0 0 0 1 0 0 0 1 0"/>
@@ -551,7 +574,11 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
                   fill="none"
                   stroke={isHighlighted ? "#3B82F6" : isClicked ? "#DC2626" : isHovered ? "#059669" : "#4B5563"}
                   strokeWidth={isHighlighted ? 4 : isClicked ? 3.5 : isHovered ? 3 : 2.5}
-                  markerEnd={isHighlighted ? "url(#arrowhead-highlighted)" : "url(#arrowhead)"}
+                  markerEnd={
+                    isHighlighted ? "url(#arrowhead-highlighted)" : 
+                    isClicked ? "url(#arrowhead-clicked)" : 
+                    "url(#arrowhead)"
+                  }
                   className="cursor-pointer transition-all duration-200"
                   filter={isHighlighted ? "url(#glow)" : "none"}
                   strokeOpacity={selectedNode ? (isHighlighted ? 1 : 0.3) : 0.8}
