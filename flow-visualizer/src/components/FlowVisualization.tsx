@@ -59,9 +59,9 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
         const startNodes = data.nodes.filter(n => n.type === 'start' || inDegreeTemp[n.id] === 0);
         let estimatedLayers = Math.max(1, Math.ceil(nodeCount / 3)); // Simple estimation
         
-        const minWidth = 600;
-        const layerWidth = 200; // Base width per layer
-        const baseWidth = Math.max(minWidth, estimatedLayers * layerWidth + 200);
+        const minWidth = 800; // Increased minimum width
+        const layerWidth = 220; // Increased base width per layer
+        const baseWidth = Math.max(minWidth, estimatedLayers * layerWidth + 400); // More padding
         
         // Calculate height based on maximum nodes that might stack vertically
         const maxNodesInLayer = Math.min(Math.ceil(nodeCount / Math.max(estimatedLayers, 1)), 6);
@@ -242,12 +242,20 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
         }
       }
       
-      // Adaptive layer spacing - more space for layers with more connections
-      const layerEdgeCount = data.edges.filter(edge => 
-        layer.includes(edge.source) || layer.includes(edge.target)).length;
-      const spacingMultiplier = Math.max(0.9, Math.min(1.3, 1 + (layerEdgeCount / edgeCount) * 0.5));
-      
-      currentX += optimalLayerWidth * Math.max(colsNeeded * spacingMultiplier, 1);
+      // Adaptive layer spacing - distribute evenly across available width
+      if (layerIndex === layers.length - 1) {
+        // Last layer - no additional spacing needed
+      } else {
+        // Calculate remaining width and distribute evenly among remaining layers
+        const remainingLayers = layers.length - layerIndex - 1;
+        // Reserve space for right margin by reducing available width
+        const reservedRightMargin = 80; // Extra space for rightmost nodes
+        const usableWidth = availableWidth - reservedRightMargin;
+        const remainingWidth = usableWidth - (currentX - margin);
+        const optimalSpacing = remainingLayers > 0 ? Math.max(minLayerWidth, remainingWidth / remainingLayers) : optimalLayerWidth;
+        const actualSpacing = Math.max(minLayerWidth, Math.min(optimalSpacing, maxLayerWidth * 1.2));
+        currentX += actualSpacing;
+      }
     });
 
     return { positions, width, height };
