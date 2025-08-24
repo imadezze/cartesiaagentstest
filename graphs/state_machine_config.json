@@ -1,0 +1,694 @@
+{
+  "metadata": {
+    "title": "Cartesia Sales Agent State Machine Configuration",
+    "version": "1.0",
+    "created": "2025-01-24",
+    "description": "JSON configuration for generating state machine diagrams"
+  },
+  "conversation_flow": {
+    "name": "User Conversation Flow",
+    "description": "Main conversation states and transitions for user interactions",
+    "states": [
+      {
+        "id": "start",
+        "name": "Initial",
+        "type": "start",
+        "description": "Conversation begins with agent greeting"
+      },
+      {
+        "id": "greeting_received",
+        "name": "Greeting\nReceived",
+        "type": "normal",
+        "description": "User provides name or responds to greeting"
+      },
+      {
+        "id": "discovery_active",
+        "name": "Discovery\nActive",
+        "type": "normal",
+        "description": "Agent actively discovering user needs and pain points"
+      },
+      {
+        "id": "pain_point_received",
+        "name": "Pain Point\nReceived",
+        "type": "process",
+        "description": "User has shared specific problems or challenges"
+      },
+      {
+        "id": "company_mentioned",
+        "name": "Company\nMentioned",
+        "type": "trigger",
+        "description": "User provides company information"
+      },
+      {
+        "id": "research_triggered",
+        "name": "Research\nTriggered",
+        "type": "background",
+        "description": "Background research process initiated"
+      },
+      {
+        "id": "value_prop_presentation",
+        "name": "Value Prop\nPresentation",
+        "type": "process",
+        "description": "Agent presents tailored solution based on research"
+      },
+      {
+        "id": "question_asked",
+        "name": "Question\nAsked",
+        "type": "decision",
+        "description": "User asks questions about solutions or implementation"
+      },
+      {
+        "id": "contact_collection",
+        "name": "Contact\nCollection",
+        "type": "process",
+        "description": "Collecting remaining contact information"
+      },
+      {
+        "id": "info_validation",
+        "name": "Info\nValidation",
+        "type": "validation",
+        "description": "Automated check for completeness of information"
+      },
+      {
+        "id": "call_end",
+        "name": "Call End",
+        "type": "end",
+        "description": "Conversation successfully concluded"
+      }
+    ],
+    "transitions": [
+      {
+        "from": "start",
+        "to": "greeting_received",
+        "trigger": "User greeting/name",
+        "condition": "User responds to initial greeting"
+      },
+      {
+        "from": "start",
+        "to": "pain_point_received",
+        "trigger": "Direct problem statement",
+        "condition": "User immediately shares challenges"
+      },
+      {
+        "from": "start",
+        "to": "question_asked",
+        "trigger": "User question",
+        "condition": "User asks about Cartesia services"
+      },
+      {
+        "from": "greeting_received",
+        "to": "discovery_active",
+        "trigger": "Agent asks how to help",
+        "condition": "Standard flow after greeting exchange"
+      },
+      {
+        "from": "discovery_active",
+        "to": "pain_point_received",
+        "trigger": "Pain points shared",
+        "condition": "User explains challenges or needs"
+      },
+      {
+        "from": "discovery_active",
+        "to": "company_mentioned",
+        "trigger": "Company information",
+        "condition": "User provides company name or details"
+      },
+      {
+        "from": "discovery_active",
+        "to": "question_asked",
+        "trigger": "User questions",
+        "condition": "User asks questions during discovery"
+      },
+      {
+        "from": "pain_point_received",
+        "to": "company_mentioned",
+        "trigger": "Company provided",
+        "condition": "User shares company after expressing needs"
+      },
+      {
+        "from": "pain_point_received",
+        "to": "discovery_active",
+        "trigger": "Follow-up questions",
+        "condition": "Agent asks for more details about challenges"
+      },
+      {
+        "from": "company_mentioned",
+        "to": "research_triggered",
+        "trigger": "Background research",
+        "condition": "Company name triggers automated research"
+      },
+      {
+        "from": "company_mentioned",
+        "to": "discovery_active",
+        "trigger": "Continue discovery",
+        "condition": "More information needed before research"
+      },
+      {
+        "from": "research_triggered",
+        "to": "value_prop_presentation",
+        "trigger": "Research complete",
+        "condition": "Background research and analysis finished"
+      },
+      {
+        "from": "value_prop_presentation",
+        "to": "question_asked",
+        "trigger": "User questions",
+        "condition": "User wants clarification or more details"
+      },
+      {
+        "from": "value_prop_presentation",
+        "to": "contact_collection",
+        "trigger": "User interested",
+        "condition": "User shows interest and ready for next steps"
+      },
+      {
+        "from": "value_prop_presentation",
+        "to": "call_end",
+        "trigger": "User wants to end",
+        "condition": "User satisfied but wants to conclude call"
+      },
+      {
+        "from": "question_asked",
+        "to": "discovery_active",
+        "trigger": "Continue conversation",
+        "condition": "Question answered, more discovery needed"
+      },
+      {
+        "from": "question_asked",
+        "to": "contact_collection",
+        "trigger": "Move to collection",
+        "condition": "Question answered, ready for contact info"
+      },
+      {
+        "from": "question_asked",
+        "to": "call_end",
+        "trigger": "User satisfied",
+        "condition": "All questions answered, user ready to end"
+      },
+      {
+        "from": "contact_collection",
+        "to": "info_validation",
+        "trigger": "Check completeness",
+        "condition": "Validate all required information collected"
+      },
+      {
+        "from": "info_validation",
+        "to": "call_end",
+        "trigger": "Complete information",
+        "condition": "All required fields: name, company, email present"
+      },
+      {
+        "from": "info_validation",
+        "to": "discovery_active",
+        "trigger": "Missing information",
+        "condition": "Critical information missing, continue conversation"
+      }
+    ]
+  },
+  "leads_extraction": {
+    "name": "Leads Extraction Node",
+    "description": "Background processing for extracting user information",
+    "states": [
+      {
+        "id": "listening",
+        "name": "Listening",
+        "type": "start",
+        "description": "Waiting for UserStoppedSpeaking events"
+      },
+      {
+        "id": "user_stopped",
+        "name": "User Stopped",
+        "type": "trigger",
+        "description": "UserStoppedSpeaking event received"
+      },
+      {
+        "id": "analyzing_conversation",
+        "name": "Analyzing\nConversation",
+        "type": "process",
+        "description": "Extract conversation history, filter background events"
+      },
+      {
+        "id": "extracting_leads",
+        "name": "Extracting\nLeads",
+        "type": "process",
+        "description": "Process conversation with Gemini using leads extraction prompt"
+      },
+      {
+        "id": "validating_json",
+        "name": "Validating\nJSON",
+        "type": "validation",
+        "description": "Parse and validate LLM response as structured JSON"
+      },
+      {
+        "id": "leads_complete",
+        "name": "Leads\nComplete",
+        "type": "process",
+        "description": "Valid leads information extracted successfully"
+      },
+      {
+        "id": "leads_error",
+        "name": "Leads\nError",
+        "type": "end",
+        "description": "Error in JSON parsing or validation"
+      },
+      {
+        "id": "broadcast_leads",
+        "name": "Broadcast\nLeads",
+        "type": "end",
+        "description": "Emit LeadsAnalysis event to other nodes"
+      }
+    ],
+    "transitions": [
+      {
+        "from": "listening",
+        "to": "user_stopped",
+        "action": "UserStoppedSpeaking event",
+        "condition": "User finished speaking"
+      },
+      {
+        "from": "user_stopped",
+        "to": "analyzing_conversation",
+        "action": "Extract conversation history",
+        "condition": "Filter out LeadsAnalysis and ResearchAnalysis events"
+      },
+      {
+        "from": "analyzing_conversation",
+        "to": "extracting_leads",
+        "action": "Process with Gemini",
+        "condition": "Use LEADS_EXTRACTION_PROMPT with temperature 0.1"
+      },
+      {
+        "from": "extracting_leads",
+        "to": "validating_json",
+        "action": "Parse LLM response",
+        "condition": "Attempt to parse as JSON structure"
+      },
+      {
+        "from": "validating_json",
+        "to": "leads_complete",
+        "action": "Valid JSON extracted",
+        "condition": "JSON parsing successful and structure valid"
+      },
+      {
+        "from": "validating_json",
+        "to": "leads_error",
+        "action": "Invalid JSON/parsing error",
+        "condition": "JSON parsing failed or invalid structure"
+      },
+      {
+        "from": "leads_complete",
+        "to": "broadcast_leads",
+        "action": "Emit LeadsAnalysis event",
+        "condition": "Ready to notify other system components"
+      },
+      {
+        "from": "leads_error",
+        "to": "listening",
+        "action": "Log error and continue",
+        "condition": "Error logged, system continues operation"
+      },
+      {
+        "from": "broadcast_leads",
+        "to": "listening",
+        "action": "Ready for next user input",
+        "condition": "Event broadcasted, return to listening state"
+      }
+    ]
+  },
+  "research_node": {
+    "name": "Research Node Flow",
+    "description": "Company research and intelligence gathering",
+    "states": [
+      {
+        "id": "waiting",
+        "name": "Waiting",
+        "type": "start",
+        "description": "Waiting for LeadsAnalysis events with company information"
+      },
+      {
+        "id": "leads_received",
+        "name": "Leads\nReceived",
+        "type": "trigger",
+        "description": "LeadsAnalysis event received from leads extraction"
+      },
+      {
+        "id": "checking_company",
+        "name": "Checking\nCompany",
+        "type": "decision",
+        "description": "Extract and validate company name from leads data"
+      },
+      {
+        "id": "skip_research",
+        "name": "Skip\nResearch",
+        "type": "end",
+        "description": "No company name found or already researched"
+      },
+      {
+        "id": "checking_cache",
+        "name": "Checking\nCache",
+        "type": "decision",
+        "description": "Check if company already researched to avoid duplicates"
+      },
+      {
+        "id": "start_research",
+        "name": "Start\nResearch",
+        "type": "process",
+        "description": "Initiate research process for new/changed company"
+      },
+      {
+        "id": "google_search",
+        "name": "Google\nSearch",
+        "type": "process",
+        "description": "Execute Google Search queries via Gemini Live API"
+      },
+      {
+        "id": "processing_results",
+        "name": "Processing\nResults",
+        "type": "process",
+        "description": "Process and analyze search results from multiple queries"
+      },
+      {
+        "id": "extracting_insights",
+        "name": "Extracting\nInsights",
+        "type": "process",
+        "description": "Extract key insights: challenges, decision makers, opportunities"
+      },
+      {
+        "id": "research_complete",
+        "name": "Research\nComplete",
+        "type": "process",
+        "description": "Structure research data into standardized format"
+      },
+      {
+        "id": "broadcast_research",
+        "name": "Broadcast\nResearch",
+        "type": "end",
+        "description": "Emit ResearchAnalysis event with company insights"
+      }
+    ],
+    "transitions": [
+      {
+        "from": "waiting",
+        "to": "leads_received",
+        "action": "LeadsAnalysis event received",
+        "condition": "New leads analysis available"
+      },
+      {
+        "from": "leads_received",
+        "to": "checking_company",
+        "action": "Extract company name",
+        "condition": "Parse leads_info for company field"
+      },
+      {
+        "from": "checking_company",
+        "to": "skip_research",
+        "action": "No company name found",
+        "condition": "Company field empty or missing"
+      },
+      {
+        "from": "checking_company",
+        "to": "checking_cache",
+        "action": "Company name exists",
+        "condition": "Valid company name found in leads"
+      },
+      {
+        "from": "checking_cache",
+        "to": "skip_research",
+        "action": "Already researched",
+        "condition": "Company found in cache with no changes"
+      },
+      {
+        "from": "checking_cache",
+        "to": "start_research",
+        "action": "New or changed company",
+        "condition": "Company not in cache or key fields changed"
+      },
+      {
+        "from": "start_research",
+        "to": "google_search",
+        "action": "Use Gemini Live API with Google Search",
+        "condition": "Initialize gemini-live-2.5-flash-preview with search tool"
+      },
+      {
+        "from": "google_search",
+        "to": "processing_results",
+        "action": "Execute multiple search queries",
+        "condition": "Search for: overview, executives, technology stack"
+      },
+      {
+        "from": "processing_results",
+        "to": "extracting_insights",
+        "action": "Parse and analyze search results",
+        "condition": "Combine results from all search queries"
+      },
+      {
+        "from": "extracting_insights",
+        "to": "research_complete",
+        "action": "Structure research data",
+        "condition": "Extract insights into standardized JSON format"
+      },
+      {
+        "from": "research_complete",
+        "to": "broadcast_research",
+        "action": "Emit ResearchAnalysis event",
+        "condition": "Research data ready for consumption"
+      },
+      {
+        "from": "broadcast_research",
+        "to": "waiting",
+        "action": "Ready for next leads update",
+        "condition": "Research broadcasted, cache updated"
+      },
+      {
+        "from": "skip_research",
+        "to": "waiting",
+        "action": "Continue waiting",
+        "condition": "Return to waiting state"
+      }
+    ]
+  },
+  "call_validation": {
+    "name": "Call Validation Flow",
+    "description": "End-call condition validation and safety checks",
+    "states": [
+      {
+        "id": "monitoring",
+        "name": "Monitoring",
+        "type": "start",
+        "description": "Continuously monitoring for end_call attempts"
+      },
+      {
+        "id": "end_call_requested",
+        "name": "End Call\nRequested",
+        "type": "trigger",
+        "description": "Agent attempted to use end_call tool"
+      },
+      {
+        "id": "extracting_leads",
+        "name": "Extracting\nLeads",
+        "type": "process",
+        "description": "Get most recent LeadsAnalysis from conversation context"
+      },
+      {
+        "id": "validating_contact",
+        "name": "Validating\nContact",
+        "type": "validation",
+        "description": "Check required fields: name, company, email"
+      },
+      {
+        "id": "checking_user_intent",
+        "name": "Checking\nUser Intent",
+        "type": "validation",
+        "description": "Analyze user messages for explicit end signals"
+      },
+      {
+        "id": "validation_complete",
+        "name": "Validation\nComplete",
+        "type": "process",
+        "description": "All validation checks completed"
+      },
+      {
+        "id": "call_approved",
+        "name": "Call\nApproved",
+        "type": "end",
+        "description": "All conditions met, allow EndCall event"
+      },
+      {
+        "id": "call_blocked",
+        "name": "Call\nBlocked",
+        "type": "end",
+        "description": "Validation failed, prevent call termination"
+      },
+      {
+        "id": "generating_message",
+        "name": "Generating\nMessage",
+        "type": "process",
+        "description": "Create appropriate validation response for user"
+      }
+    ],
+    "transitions": [
+      {
+        "from": "monitoring",
+        "to": "end_call_requested",
+        "action": "Agent attempts end_call",
+        "condition": "ChatNode tries to use end_call tool"
+      },
+      {
+        "from": "end_call_requested",
+        "to": "extracting_leads",
+        "action": "Get latest LeadsAnalysis",
+        "condition": "Extract most recent leads information from context"
+      },
+      {
+        "from": "extracting_leads",
+        "to": "validating_contact",
+        "action": "Check required fields",
+        "condition": "Validate presence of name, company, email"
+      },
+      {
+        "from": "validating_contact",
+        "to": "checking_user_intent",
+        "action": "Validate user intent to end",
+        "condition": "Look for explicit end signals in recent messages"
+      },
+      {
+        "from": "checking_user_intent",
+        "to": "validation_complete",
+        "action": "All checks completed",
+        "condition": "Contact info and user intent validation done"
+      },
+      {
+        "from": "validation_complete",
+        "to": "call_approved",
+        "action": "All conditions met",
+        "condition": "Required info complete AND user wants to end"
+      },
+      {
+        "from": "validation_complete",
+        "to": "call_blocked",
+        "action": "Missing requirements",
+        "condition": "Missing required info OR user not ready to end"
+      },
+      {
+        "from": "call_approved",
+        "to": "monitoring",
+        "action": "Allow EndCall event",
+        "condition": "EndCall event permitted, call can terminate"
+      },
+      {
+        "from": "call_blocked",
+        "to": "generating_message",
+        "action": "Create validation response",
+        "condition": "Generate appropriate prompt for missing information"
+      },
+      {
+        "from": "generating_message",
+        "to": "monitoring",
+        "action": "Send validation message",
+        "condition": "Validation message sent to user, continue monitoring"
+      }
+    ]
+  },
+  "system_architecture": {
+    "name": "System Architecture Overview",
+    "description": "High-level system component interactions",
+    "components": [
+      {
+        "id": "user",
+        "name": "User",
+        "type": "start",
+        "description": "Human user interacting with the voice agent"
+      },
+      {
+        "id": "chat_node",
+        "name": "ChatNode",
+        "type": "process",
+        "description": "Main conversation handler and response generator"
+      },
+      {
+        "id": "leads_node",
+        "name": "LeadsNode",
+        "type": "background",
+        "description": "Background leads analysis and information extraction"
+      },
+      {
+        "id": "research_node",
+        "name": "ResearchNode",
+        "type": "background",
+        "description": "Company research and intelligence gathering"
+      },
+      {
+        "id": "validation_node",
+        "name": "ValidationNode",
+        "type": "validation",
+        "description": "Call termination validation and safety checks"
+      },
+      {
+        "id": "response",
+        "name": "Agent Response",
+        "type": "end",
+        "description": "Final agent response to user"
+      }
+    ],
+    "connections": [
+      {
+        "from": "user",
+        "to": "chat_node",
+        "label": "UserTranscription",
+        "description": "User speech transcribed and sent to main chat handler"
+      },
+      {
+        "from": "user",
+        "to": "leads_node",
+        "label": "UserStopped",
+        "description": "UserStoppedSpeaking triggers background leads analysis"
+      },
+      {
+        "from": "leads_node",
+        "to": "chat_node",
+        "label": "LeadsAnalysis",
+        "description": "Extracted user information sent to chat handler"
+      },
+      {
+        "from": "leads_node",
+        "to": "research_node",
+        "label": "LeadsAnalysis",
+        "description": "Company information triggers research process"
+      },
+      {
+        "from": "research_node",
+        "to": "chat_node",
+        "label": "ResearchAnalysis",
+        "description": "Company research results enhance conversation context"
+      },
+      {
+        "from": "chat_node",
+        "to": "validation_node",
+        "label": "end_call attempt",
+        "description": "ChatNode attempts to end call, validation required"
+      },
+      {
+        "from": "validation_node",
+        "to": "response",
+        "label": "Validation result",
+        "description": "Validation response or approval for call termination"
+      },
+      {
+        "from": "chat_node",
+        "to": "response",
+        "label": "Normal response",
+        "description": "Standard conversational response to user"
+      }
+    ]
+  },
+  "color_scheme": {
+    "start": "#90EE90",
+    "end": "#FFB6C1", 
+    "decision": "#FFD700",
+    "process": "#87CEEB",
+    "validation": "#DDA0DD",
+    "normal": "#F0F8FF",
+    "background": "#E6E6FA",
+    "trigger": "#FFA07A"
+  }
+}
