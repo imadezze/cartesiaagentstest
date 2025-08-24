@@ -82,6 +82,62 @@ export const truncateText = (text: string, maxLength: number = 30): string => {
   return text.substring(0, maxLength) + '...';
 };
 
+export const formatNodeLabelForDisplay = (name: string, type: string): string => {
+  // Remove prefixes and clean up the name
+  const cleanName = name.replace(/🟢 START\n|🔴 END\n/, '').replace(/\n/g, ' ');
+  
+  // For all flows - create better formatted names
+  const nameMap: { [key: string]: string } = {
+    // Conversation Flow
+    'Initial': 'Initial',
+    'Greeting Received': 'Greeting\nReceived',
+    'Discovery Active': 'Discovery\nActive',
+    'Pain Point Received': 'Pain Point\nReceived', 
+    'Company Mentioned': 'Company\nMentioned',
+    'Research Triggered': 'Research\nTriggered',
+    'Value Prop Presentation': 'Value Prop\nPresentation',
+    'Question Asked': 'Question\nAsked',
+    'Contact Collection': 'Contact\nCollection',
+    'Info Validation': 'Info\nValidation',
+    'Call End': 'Call End',
+    
+    // Leads Extraction Flow
+    'Listening': 'Listening',
+    'User Stopped': 'User\nStopped',
+    'Analyzing Conversation': 'Analyzing\nConversation',
+    'Extracting Leads': 'Extracting\nLeads',
+    'Validating JSON': 'Validating\nJSON',
+    'Leads Complete': 'Leads\nComplete',
+    'Leads Error': 'Leads\nError',
+    'Broadcast Leads': 'Broadcast\nLeads',
+    
+    // Research Node Flow
+    'Waiting': 'Waiting',
+    'Leads Received': 'Leads\nReceived',
+    'Checking Company': 'Checking\nCompany',
+    'Skip Research': 'Skip\nResearch',
+    'Checking Cache': 'Checking\nCache',
+    'Start Research': 'Start\nResearch',
+    'Google Search': 'Google\nSearch',
+    'Processing Results': 'Processing\nResults',
+    'Extracting Insights': 'Extracting\nInsights',
+    'Research Complete': 'Research\nComplete',
+    'Broadcast Research': 'Broadcast\nResearch',
+    
+    // Call Validation Flow
+    'Monitoring': 'Monitoring',
+    'End Call Requested': 'End Call\nRequested',
+    'Validating Contact': 'Validating\nContact',
+    'Checking User Intent': 'Checking\nUser Intent',
+    'Validation Complete': 'Validation\nComplete',
+    'Call Approved': 'Call\nApproved',
+    'Call Blocked': 'Call\nBlocked',
+    'Generating Message': 'Generating\nMessage'
+  };
+
+  return nameMap[cleanName] || cleanName;
+};
+
 export const formatNodeLabel = (name: string, type: string): string => {
   let prefix = '';
   if (type === 'start') prefix = '🟢 START\n';
