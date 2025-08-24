@@ -22,6 +22,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
+  const [clickedEdge, setClickedEdge] = useState<string | null>(null);
   const [showFullLabels, setShowFullLabels] = useState(false);
   const [showEdgeLabels, setShowEdgeLabels] = useState(true);
   const [canvasSize, setCanvasSize] = useState<'small' | 'medium' | 'large' | 'auto'>('auto');
@@ -528,6 +529,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
             const isHighlighted = selectedNode && 
               (edge.source === selectedNode || edge.target === selectedNode);
             const isHovered = hoveredEdge === edge.id;
+            const isClicked = clickedEdge === edge.id;
             
             return (
               <g key={edge.id}>
@@ -535,15 +537,18 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
                 <path
                   d={getEdgePath(edge, edgeIndex)}
                   fill="none"
-                  stroke={isHighlighted ? "#3B82F6" : isHovered ? "#059669" : "#4B5563"}
-                  strokeWidth={isHighlighted ? 4 : isHovered ? 3 : 2.5}
+                  stroke={isHighlighted ? "#3B82F6" : isClicked ? "#DC2626" : isHovered ? "#059669" : "#4B5563"}
+                  strokeWidth={isHighlighted ? 4 : isClicked ? 3.5 : isHovered ? 3 : 2.5}
                   markerEnd={isHighlighted ? "url(#arrowhead-highlighted)" : "url(#arrowhead)"}
                   className="cursor-pointer transition-all duration-200"
                   filter={isHighlighted ? "url(#glow)" : "none"}
                   strokeOpacity={selectedNode ? (isHighlighted ? 1 : 0.3) : 0.8}
                   onMouseEnter={() => setHoveredEdge(edge.id)}
                   onMouseLeave={() => setHoveredEdge(null)}
-                  onClick={() => onEdgeClick?.(edge)}
+                  onClick={() => {
+                    setClickedEdge(clickedEdge === edge.id ? null : edge.id);
+                    onEdgeClick?.(edge);
+                  }}
                 />
 
                 {/* Edge label - show based on toggle, enhance when highlighted */}
@@ -554,10 +559,22 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
                       const targetPos = positions[edge.target];
                       if (!sourcePos || !targetPos) return null;
                       
-                      // Position label closer to source node to reduce clutter
-                      const ratio = 0.25; // 25% from source to target
-                      const labelX = sourcePos.x + (targetPos.x - sourcePos.x) * ratio;
-                      const labelY = sourcePos.y + (targetPos.y - sourcePos.y) * ratio;
+                      let labelX, labelY;
+                      
+                      if (isHovered || isClicked) {
+                        // When hovered or clicked, position label at top right of the edge path
+                        const midX = (sourcePos.x + targetPos.x) / 2;
+                        const midY = (sourcePos.y + targetPos.y) / 2;
+                        
+                        // Offset to top right
+                        labelX = midX + 30;
+                        labelY = midY - 20;
+                      } else {
+                        // Default position - closer to source node to reduce clutter
+                        const ratio = 0.25; // 25% from source to target
+                        labelX = sourcePos.x + (targetPos.x - sourcePos.x) * ratio;
+                        labelY = sourcePos.y + (targetPos.y - sourcePos.y) * ratio;
+                      }
                       
                       const labelText = showFullLabels ? edge.label : truncateText(edge.label, 8);
                       const labelWidth = Math.max(40, labelText.length * 6);
@@ -570,7 +587,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
                             width={labelWidth}
                             height="16"
                             fill="rgba(255, 255, 255, 0.95)"
-                            stroke={isHighlighted ? "rgba(29, 78, 216, 0.8)" : "rgba(5, 150, 105, 0.6)"}
+                            stroke={isHighlighted ? "rgba(29, 78, 216, 0.8)" : isClicked ? "rgba(220, 38, 38, 0.8)" : isHovered ? "rgba(5, 150, 105, 0.8)" : "rgba(5, 150, 105, 0.6)"}
                             strokeWidth="1"
                             rx="8"
                             className="pointer-events-none"
@@ -583,7 +600,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
                             className="pointer-events-none font-semibold"
                             style={{ 
                               fontSize: canvasSize === 'small' ? '7px' : canvasSize === 'large' ? '11px' : '9px',
-                              fill: isHighlighted ? '#1d4ed8' : '#059669',
+                              fill: isHighlighted ? '#1d4ed8' : isClicked ? '#dc2626' : isHovered ? '#047857' : '#059669',
                               textShadow: '0 1px 2px rgba(255,255,255,0.9)'
                             }}
                           >
@@ -684,9 +701,9 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
           })}
         </svg>
 
-        {/* Tooltip for hovered elements */}
-        {(hoveredNode || hoveredEdge) && (
-          <div className="absolute bottom-4 left-4 bg-gray-900 text-white p-3 rounded-lg shadow-lg max-w-xs">
+        {/* Tooltip for hovered and clicked elements */}
+        {(hoveredNode || hoveredEdge || clickedEdge) && (
+          <div className="absolute top-4 right-4 bg-gray-900 text-white p-3 rounded-lg shadow-lg max-w-xs">
             {hoveredNode && (
               <div>
                 <div className="font-semibold">
@@ -700,14 +717,19 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
                 </div>
               </div>
             )}
-            {hoveredEdge && (
+            {(hoveredEdge || clickedEdge) && (
               <div>
+                {clickedEdge && (
+                  <div className="text-xs text-red-400 mb-1">
+                    Click again to close
+                  </div>
+                )}
                 <div className="font-semibold">
-                  {data.edges.find(e => e.id === hoveredEdge)?.label}
+                  {data.edges.find(e => e.id === (hoveredEdge || clickedEdge))?.label}
                 </div>
-                {data.edges.find(e => e.id === hoveredEdge)?.description && (
+                {data.edges.find(e => e.id === (hoveredEdge || clickedEdge))?.description && (
                   <div className="text-sm text-gray-300 mt-1">
-                    {data.edges.find(e => e.id === hoveredEdge)?.description}
+                    {data.edges.find(e => e.id === (hoveredEdge || clickedEdge))?.description}
                   </div>
                 )}
               </div>
