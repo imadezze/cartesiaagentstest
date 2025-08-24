@@ -72,14 +72,14 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
         const startNodes = data.nodes.filter(n => n.type === 'start' || inDegreeTemp[n.id] === 0);
         let estimatedLayers = Math.max(1, Math.ceil(nodeCount / 3)); // Simple estimation
         
-        const minWidth = 900; // Further increased minimum width
-        const layerWidth = 250; // Further increased base width per layer
-        const baseWidth = Math.max(minWidth, estimatedLayers * layerWidth + 500); // Even more padding
+        const minWidth = 1200; // Increased minimum width for auto size
+        const layerWidth = 300; // Increased base width per layer
+        const baseWidth = Math.max(minWidth, estimatedLayers * layerWidth + 300); // More padding
         
         // Calculate height based on maximum nodes that might stack vertically
         const maxNodesInLayer = Math.min(Math.ceil(nodeCount / Math.max(estimatedLayers, 1)), 6);
-        const minHeight = 400;
-        const baseHeight = Math.max(minHeight, maxNodesInLayer * 120 + 200);
+        const minHeight = 600; // Increased minimum height
+        const baseHeight = Math.max(minHeight, maxNodesInLayer * 200 + 300); // More vertical space
         return { baseWidth, baseHeight };
     }
   };
