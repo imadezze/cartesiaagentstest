@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import json
 from typing import AsyncGenerator
 
-from config import DEFAULT_MODEL_ID, EVENT_HANDLERS, LEADS_EXTRACTION_PROMPT, LeadsAnalysis
+from config import DEFAULT_MODEL_ID, EVENT_HANDLERS, LEADS_EXTRACTION_PROMPT, LeadsAnalysis, ResearchAnalysis
 from google.genai import types as gemini_types
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -107,7 +107,13 @@ class LeadsExtractionNode(ReasoningNode):
 
         try:
             # Use the SAME pattern as ChatNode - convert context.events directly
-            messages = convert_messages_to_gemini(context.events, handlers=EVENT_HANDLERS)
+            # Filter out background analysis events to avoid processing loops
+            # and don't use EVENT_HANDLERS since they return None for analysis events
+            conversation_events = [
+                event for event in context.events 
+                if not isinstance(event, (LeadsAnalysis, ResearchAnalysis))
+            ]
+            messages = convert_messages_to_gemini(conversation_events)
 
             logger.info(f"🔍 Analyzing conversation with {len(context.events)} events")
 
