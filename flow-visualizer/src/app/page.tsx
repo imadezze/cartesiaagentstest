@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import FlowVisualization from '@/components/FlowVisualization';
 import FlowSelector from '@/components/FlowSelector';
 import NodeDetails from '@/components/NodeDetails';
-import { StateMachineConfig, GraphData, GraphNode, GraphEdge } from '@/types';
+import { StateMachineConfig, GraphData, GraphNode, GraphEdge, Flow } from '@/types';
 import { flowToGraphData, systemArchitectureToGraphData } from '@/utils/graphUtils';
 
 export default function Home() {
@@ -49,7 +49,7 @@ export default function Home() {
       if (currentFlow === 'system_architecture') {
         newGraphData = systemArchitectureToGraphData(config.system_architecture);
       } else {
-        const flow = config[currentFlow as keyof StateMachineConfig] as any;
+        const flow = config[currentFlow as keyof StateMachineConfig] as Flow;
         if (!flow || !flow.states) {
           throw new Error(`Invalid flow: ${currentFlow}`);
         }

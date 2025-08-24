@@ -70,7 +70,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
         
         // Quick layer estimation
         const startNodes = data.nodes.filter(n => n.type === 'start' || inDegreeTemp[n.id] === 0);
-        let estimatedLayers = Math.max(1, Math.ceil(nodeCount / 3)); // Simple estimation
+        const estimatedLayers = Math.max(1, Math.ceil(nodeCount / 3)); // Simple estimation
         
         const minWidth = 1200; // Increased minimum width for auto size
         const layerWidth = 300; // Increased base width per layer

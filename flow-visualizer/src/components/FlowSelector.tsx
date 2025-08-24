@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { StateMachineConfig } from '@/types';
+import { StateMachineConfig, Flow, SystemArchitecture } from '@/types';
 
 interface FlowSelectorProps {
   config: StateMachineConfig;
@@ -71,13 +71,13 @@ const FlowSelector: React.FC<FlowSelectorProps> = ({ config, currentFlow, onFlow
 
   const getFlowStats = (flowKey: string) => {
     if (flowKey === 'system_architecture') {
-      const arch = config[flowKey as keyof StateMachineConfig] as any;
+      const arch = config[flowKey as keyof StateMachineConfig] as SystemArchitecture;
       return {
         nodes: arch?.components?.length || 0,
         edges: arch?.connections?.length || 0
       };
     } else {
-      const flow = config[flowKey as keyof StateMachineConfig] as any;
+      const flow = config[flowKey as keyof StateMachineConfig] as Flow;
       return {
         nodes: flow?.states?.length || 0,
         edges: flow?.transitions?.length || 0
