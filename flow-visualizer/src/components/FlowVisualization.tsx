@@ -37,7 +37,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
       case 'medium':
         return { baseWidth: 900, baseHeight: 600 };
       case 'large':
-        return { baseWidth: 1200, baseHeight: 800 };
+        return { baseWidth: 1400, baseHeight: 900 };
       case 'auto':
       default:
         // Dynamic sizing based on content - calculate width based on actual layers
@@ -59,9 +59,9 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
         const startNodes = data.nodes.filter(n => n.type === 'start' || inDegreeTemp[n.id] === 0);
         let estimatedLayers = Math.max(1, Math.ceil(nodeCount / 3)); // Simple estimation
         
-        const minWidth = 800; // Increased minimum width
-        const layerWidth = 220; // Increased base width per layer
-        const baseWidth = Math.max(minWidth, estimatedLayers * layerWidth + 400); // More padding
+        const minWidth = 900; // Further increased minimum width
+        const layerWidth = 250; // Further increased base width per layer
+        const baseWidth = Math.max(minWidth, estimatedLayers * layerWidth + 500); // Even more padding
         
         // Calculate height based on maximum nodes that might stack vertically
         const maxNodesInLayer = Math.min(Math.ceil(nodeCount / Math.max(estimatedLayers, 1)), 6);
@@ -271,8 +271,8 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
       } else {
         // Calculate remaining width and distribute evenly among remaining layers
         const remainingLayers = layers.length - layerIndex - 1;
-        // Reserve space for right margin by reducing available width
-        const reservedRightMargin = 80; // Extra space for rightmost nodes
+        // Reserve more space for right margin to prevent cutoff
+        const reservedRightMargin = 80; // Increased space for rightmost nodes including labels
         const usableWidth = availableWidth - reservedRightMargin;
         const remainingWidth = usableWidth - (currentX - margin);
         const optimalSpacing = remainingLayers > 0 ? Math.max(minLayerWidth, remainingWidth / remainingLayers) : optimalLayerWidth;
@@ -447,7 +447,7 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
               <option value="auto">Auto Size</option>
               <option value="small">Small (600x400)</option>
               <option value="medium">Medium (900x600)</option>
-              <option value="large">Large (1200x800)</option>
+              <option value="large">Large (1400x900)</option>
             </select>
           </div>
         </div>
