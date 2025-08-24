@@ -23,9 +23,21 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
   const [clickedEdge, setClickedEdge] = useState<string | null>(null);
+  const [clickedLegendItem, setClickedLegendItem] = useState<string | null>(null);
   const [showFullLabels, setShowFullLabels] = useState(false);
   const [showEdgeLabels, setShowEdgeLabels] = useState(true);
   const [canvasSize, setCanvasSize] = useState<'small' | 'medium' | 'large' | 'auto'>('auto');
+
+  // Legend descriptions
+  const legendDescriptions = {
+    'START': 'Starting point of the flow - where the process begins',
+    'END': 'Terminal point of the flow - where the process concludes',
+    'Decision': 'Decision points that branch the flow based on conditions or choices',
+    'Process': 'Main processing steps that perform actions or operations',
+    'Validation': 'Validation steps that check data integrity or business rules',
+    'Trigger': 'Event triggers that initiate or activate specific processes',
+    'Background': 'Background processes that run independently or asynchronously'
+  };
 
   // Canvas size presets
   const getCanvasDimensions = () => {
@@ -740,32 +752,75 @@ const FlowVisualization: React.FC<FlowVisualizationProps> = ({
 
       {/* Legend */}
       <div className="p-4 border-t border-gray-200 bg-gray-50">
+        {/* Legend description */}
+        {clickedLegendItem && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold text-blue-900 mb-1">
+                  {clickedLegendItem}
+                </div>
+                <div className="text-sm text-blue-800">
+                  {legendDescriptions[clickedLegendItem as keyof typeof legendDescriptions]}
+                </div>
+              </div>
+              <button
+                onClick={() => setClickedLegendItem(null)}
+                className="text-blue-600 hover:text-blue-800 ml-3"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+        
         <div className="flex flex-wrap gap-6 text-sm">
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded-md transition-colors"
+            onClick={() => setClickedLegendItem(clickedLegendItem === 'START' ? null : 'START')}
+          >
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#00FF00' }}></div>
             <span className="font-medium text-gray-700">START</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded-md transition-colors"
+            onClick={() => setClickedLegendItem(clickedLegendItem === 'END' ? null : 'END')}
+          >
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#FF0000' }}></div>
             <span className="font-medium text-gray-700">END</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded-md transition-colors"
+            onClick={() => setClickedLegendItem(clickedLegendItem === 'Decision' ? null : 'Decision')}
+          >
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#FFD700' }}></div>
             <span className="font-medium text-gray-700">Decision</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded-md transition-colors"
+            onClick={() => setClickedLegendItem(clickedLegendItem === 'Process' ? null : 'Process')}
+          >
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#87CEEB' }}></div>
             <span className="font-medium text-gray-700">Process</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded-md transition-colors"
+            onClick={() => setClickedLegendItem(clickedLegendItem === 'Validation' ? null : 'Validation')}
+          >
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#DDA0DD' }}></div>
             <span className="font-medium text-gray-700">Validation</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded-md transition-colors"
+            onClick={() => setClickedLegendItem(clickedLegendItem === 'Trigger' ? null : 'Trigger')}
+          >
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#FFA07A' }}></div>
             <span className="font-medium text-gray-700">Trigger</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded-md transition-colors"
+            onClick={() => setClickedLegendItem(clickedLegendItem === 'Background' ? null : 'Background')}
+          >
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#E6E6FA' }}></div>
             <span className="font-medium text-gray-700">Background</span>
           </div>
